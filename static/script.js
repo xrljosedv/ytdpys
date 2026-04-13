@@ -1,6 +1,8 @@
 let currentVideoInfo = null;
 let selectedFormat = null;
 let currentDownloadType = 'video';
+let retryCount = 0;
+const MAX_RETRIES = 3;
 
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('fetchBtn').addEventListener('click', fetchVideoInfo);
@@ -47,25 +49,41 @@ async function fetchVideoInfo() {
     videoInfo.style.display = 'none';
     downloadSection.style.display = 'none';
     errorContainer.style.display = 'none';
+    retryCount = 0;
 
+    await attemptFetch(url);
+}
+
+async function attemptFetch(url) {
     try {
         const response = await fetch(`/api/info?url=${encodeURIComponent(url)}`);
         const data = await response.json();
 
-        loader.style.display = 'none';
+        document.getElementById('loader').style.display = 'none';
 
         if (data.success) {
             currentVideoInfo = data;
             displayVideoInfo(data);
             displayFormats(data);
-            videoInfo.style.display = 'flex';
-            downloadSection.style.display = 'block';
+            document.getElementById('videoInfo').style.display = 'flex';
+            document.getElementById('downloadSection').style.display = 'block';
             selectedFormat = null;
         } else {
-            showError(data.error || 'Error al obtener información del video');
+            if (data.need_cookies && retryCount < MAX_RETRIES) {
+                retryCount++;
+                document.querySelector('#loader p').textContent = `Reintentando (${retryCount}/${MAX_RETRIES})...`;
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                return await attemptFetch(url);
+            }
+            
+            let errorMsg = data.error || 'Error al obtener información del video';
+            if (data.need_cookies) {
+                errorMsg += '\n\nSolución: Usa un VPN o espera unos minutos.';
+            }
+            showError(errorMsg);
         }
     } catch (error) {
-        loader.style.display = 'none';
+        document.getElementById('loader').style.display = 'none';
         showError('Error de conexión. Intenta de nuevo.');
     }
 }
@@ -99,23 +117,44 @@ function displayFormats(info) {
     audioFormatsDiv.innerHTML = '';
 
     if (info.formats && info.formats.length > 0) {
+        const uniqueFormats = [];
+        const seenHeights = new Set();
+        
         info.formats.forEach(format => {
+            const height = format.height || 0;
+            if (!seenHeights.has(height) || format.filesize) {
+                seenHeights.add(height);
+                uniqueFormats.push(format);
+            }
+        });
+        
+        uniqueFormats.sort((a, b) => (b.height || 0) - (a.height || 0));
+        
+        uniqueFormats.slice(0, 6).forEach(format => {
             const card = createFormatCard(format, 'video');
             videoFormatsDiv.appendChild(card);
         });
     } else {
-        videoFormatsDiv.innerHTML = '<p style="color: var(--text-muted);">Formatos de video no disponibles</p>';
+        videoFormatsDiv.innerHTML = '<p style="color: var(--text-muted);">Formatos no disponibles</p>';
     }
 
-    const audioFormats = [
-        { format_id: 'bestaudio', abr: '192', ext: 'mp3', format_note: 'MP3', filesize: null },
-        { format_id: '140', abr: '128', ext: 'm4a', format_note: 'AAC', filesize: null }
+    const audioQualities = [
+        { format_id: 'bestaudio', abr: '192', ext: 'mp3', format_note: 'MP3 Alta Calidad' },
+        { format_id: '140', abr: '128', ext: 'm4a', format_note: 'AAC 128kbps' }
     ];
     
-    audioFormats.forEach(format => {
+    audioQualities.forEach(format => {
         const card = createFormatCard(format, 'audio');
         audioFormatsDiv.appendChild(card);
     });
+    
+    if (info.audio_formats && info.audio_formats.length > 0) {
+        audioFormatsDiv.innerHTML = '';
+        info.audio_formats.slice(0, 3).forEach(format => {
+            const card = createFormatCard(format, 'audio');
+            audioFormatsDiv.appendChild(card);
+        });
+    }
 
     updateDownloadButton();
 }
@@ -132,7 +171,7 @@ function createFormatCard(format, type) {
     if (type === 'video') {
         quality.textContent = format.resolution || format.format_note || 'Video';
     } else {
-        quality.textContent = `${format.abr || '192'} kbps`;
+        quality.textContent = format.abr ? `${format.abr} kbps` : (format.format_note || 'MP3');
     }
 
     const detail = document.createElement('div');
@@ -211,7 +250,11 @@ async function startDownload(type) {
                 downloadBtn.download = data.filename;
             }, 500);
         } else {
-            showError(data.error || 'Error al preparar la descarga');
+            let errorMsg = data.error || 'Error al preparar la descarga';
+            if (errorMsg.includes('Sign in') || errorMsg.includes('bot')) {
+                errorMsg = 'YouTube requiere verificación. Intenta con otro video o espera unos minutos.';
+            }
+            showError(errorMsg);
             progressDiv.style.display = 'none';
             updateDownloadButton();
         }
@@ -224,12 +267,12 @@ async function startDownload(type) {
 
 function showError(message) {
     const errorContainer = document.getElementById('errorContainer');
-    errorContainer.textContent = message;
+    errorContainer.innerHTML = message.replace(/\n/g, '<br>');
     errorContainer.style.display = 'block';
     
     setTimeout(() => {
         errorContainer.style.display = 'none';
-    }, 5000);
+    }, 8000);
 }
 
 function formatNumber(num) {
@@ -239,10 +282,10 @@ function formatNumber(num) {
 }
 
 function formatBytes(bytes, decimals = 2) {
-    if (bytes === 0) return '0 Bytes';
+    if (!bytes || bytes === 0) return '';
     const k = 1024;
     const dm = decimals < 0 ? 0 : decimals;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-      }
+            }
