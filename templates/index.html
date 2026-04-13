@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Downloader Pro | MP3 MP4 Shorts</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app">
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <div class="logo-icon">⬇️</div>
+                    <div class="logo-text">
+                        <h1>YT<span>Downloader</span></h1>
+                        <span class="logo-badge">PRO</span>
+                    </div>
+                </div>
+                <div class="header-tag">
+                    <span>MP3 • MP4 • Shorts</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="main">
+            <div class="hero-section">
+                <h2 class="hero-title">Descarga videos de YouTube</h2>
+                <p class="hero-subtitle">MP4 en HD, MP3 320kbps y Shorts - Rápido y sin límites</p>
+            </div>
+
+            <div class="input-section">
+                <div class="url-input-wrapper">
+                    <input type="text" id="urlInput" class="url-input" placeholder="Pega el enlace de YouTube aquí..." autocomplete="off">
+                    <button id="fetchBtn" class="fetch-btn">
+                        <span>Obtener</span>
+                        <span>→</span>
+                    </button>
+                </div>
+                <div class="example-links">
+                    <span class="example-label">Ejemplos:</span>
+                    <span class="example-link" data-url="https://www.youtube.com/watch?v=dQw4w9WgXcQ">Video normal</span>
+                    <span class="example-link" data-url="https://www.youtube.com/shorts/3sT2VM8mYr8">YouTube Short</span>
+                </div>
+            </div>
+
+            <div id="loader" class="loader" style="display: none;">
+                <div class="spinner"></div>
+                <p>Obteniendo información del video...</p>
+            </div>
+
+            <div id="errorContainer" class="error-container" style="display: none;"></div>
+
+            <div id="videoInfo" class="video-info-container" style="display: none;">
+                <div class="video-preview">
+                    <img id="thumbnail" class="thumbnail" src="" alt="Thumbnail">
+                    <div id="durationBadge" class="duration-badge"></div>
+                </div>
+                <div class="video-details">
+                    <h3 id="videoTitle" class="video-title"></h3>
+                    <div class="video-meta">
+                        <span id="uploader" class="meta-item"></span>
+                        <span id="views" class="meta-item"></span>
+                        <span id="uploadDate" class="meta-item"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="downloadSection" class="download-section" style="display: none;">
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="video">📹 Video MP4</button>
+                    <button class="tab-btn" data-tab="audio">🎵 Audio MP3</button>
+                </div>
+
+                <div id="videoTab" class="tab-content active">
+                    <h4 class="section-title">Formatos de video disponibles</h4>
+                    <div id="videoFormats" class="formats-grid"></div>
+                    <button id="downloadVideoBtn" class="download-btn" data-type="video" style="display: none;">
+                        <span>Descargar Video</span>
+                        <span>⬇️</span>
+                    </button>
+                </div>
+
+                <div id="audioTab" class="tab-content">
+                    <h4 class="section-title">Calidad de audio</h4>
+                    <div id="audioFormats" class="formats-grid"></div>
+                    <button id="downloadAudioBtn" class="download-btn" data-type="audio" style="display: none;">
+                        <span>Descargar MP3</span>
+                        <span>🎵</span>
+                    </button>
+                </div>
+
+                <div id="downloadProgress" class="download-progress" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill"></div>
+                    </div>
+                    <p class="progress-text">Preparando descarga...</p>
+                </div>
+
+                <div id="downloadLink" class="download-link-container" style="display: none;">
+                    <p class="download-ready">✅ ¡Descarga lista!</p>
+                    <a id="downloadBtn" class="download-link-btn" href="#" target="_blank">
+                        <span>Haz clic para descargar</span>
+                        <span>⬇️</span>
+                    </a>
+                </div>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>YouTube Downloader Pro • Descarga rápido y seguro</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
